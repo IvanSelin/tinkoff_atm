@@ -8,6 +8,7 @@ import telebot
 from telebot import types
 from dataclasses import dataclass
 import os
+import math
 
 bot = telebot.TeleBot(os.environ['TELEGRAM_API_KEY'])
 
@@ -36,15 +37,37 @@ state = State(
     )
 
 def calculate_bounds():
-    state.bottom_left_lat = state.lat - (0.009 * state.radius)
-    state.bottom_left_long = state.long - (0.009 * state.radius)
-    state.top_right_lat = state.lat + (0.009 * state.radius)
-    state.top_right_long = state.long + (0.009 * state.radius)
+    # https://stackoverflow.com/questions/7222382/get-lat-long-given-current-point-distance-and-bearing
+    R = 6378.1 #Radius of the Earth
+    #brng = 1.57 #Bearing is 90 degrees converted to radians.
+    bottom_left_bearing = math.radians(225) # 225 degrees is bottom left
+    top_right_bearing = math.radians(45) # and 45 degrees is top right
+    d = state.radius #Distance in km
+    
+    lat1 = math.radians(state.lat) #Current lat point converted to radians
+    long1 = math.radians(state.long) #Current long point converted to radians
+    
+    lat_bottom = math.asin( math.sin(lat1)*math.cos(d/R) +
+         math.cos(lat1)*math.sin(d/R)*math.cos(bottom_left_bearing))
+    
+    long_bottom = long1 + math.atan2(math.sin(bottom_left_bearing)*math.sin(d/R)*math.cos(lat1),
+                 math.cos(d/R)-math.sin(lat1)*math.sin(lat_bottom))
+    
+    lat_top = math.asin( math.sin(lat1)*math.cos(d/R) +
+         math.cos(lat1)*math.sin(d/R)*math.cos(top_right_bearing))
+    
+    long_top = long1 + math.atan2(math.sin(top_right_bearing)*math.sin(d/R)*math.cos(lat1),
+                 math.cos(d/R)-math.sin(lat1)*math.sin(lat_top))
+    
+    state.bottom_left_lat = math.degrees(lat_bottom)
+    state.bottom_left_long = math.degrees(long_bottom)
+    state.top_right_lat = math.degrees(lat_top)
+    state.top_right_long = math.degrees(long_top)
 
 @bot.message_handler(commands=['start'])
 def start(m, res=False):
     markup=types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item_rur=types.KeyboardButton('RUR')
+    item_rur=types.KeyboardButton('RUB')
     item_usd=types.KeyboardButton('USD')
     item_eur=types.KeyboardButton('EUR')
     markup.add(item_rur)
@@ -59,7 +82,7 @@ def start(m, res=False):
     
 @bot.message_handler(
     content_types=['text'],
-    func=lambda message: message.text in ['RUR', 'USD', 'EUR']
+    func=lambda message: message.text in ['RUB', 'USD', 'EUR']
     )
 def handle_currency(message):
     state.currency = message.text
