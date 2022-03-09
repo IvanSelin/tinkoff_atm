@@ -97,9 +97,7 @@ def handle_currency(message):
     
 @bot.message_handler(content_types=['location'])
 def handle_location(message):
-    print('inside location method')
     if message.location is not None:
-        print('there is a location')
         state.lat = message.location.latitude
         state.long = message.location.longitude
         markup = types.ReplyKeyboardRemove(
