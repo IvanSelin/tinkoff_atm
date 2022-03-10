@@ -9,6 +9,7 @@ from telebot import types
 from dataclasses import dataclass
 import os
 import math
+from tinkoff_atm import TinkoffAtm
 
 bot = telebot.TeleBot(os.environ['TELEGRAM_API_KEY'])
 
@@ -24,6 +25,7 @@ class State:
     top_right_long: float
     bottom_left_lat: float
     bottom_left_long: float
+    tracker: TinkoffAtm
 
 
 state = State(
@@ -35,7 +37,8 @@ state = State(
     top_right_lat=None,
     top_right_long=None,
     bottom_left_lat=None,
-    bottom_left_long=None
+    bottom_left_long=None,
+    tracker=None
     )
 
 
@@ -53,16 +56,18 @@ def calculate_bounds():
     lat_bottom = math.asin(math.sin(lat1)*math.cos(d/R)
         + math.cos(lat1)*math.sin(d/R)*math.cos(bottom_left_bearing))
 
-    long_bottom = long1
-    + math.atan2(math.sin(bottom_left_bearing)*math.sin(d/R)*math.cos(lat1),
-                 math.cos(d/R)-math.sin(lat1)*math.sin(lat_bottom))
+    long_bottom = long1 + math.atan2(
+        math.sin(bottom_left_bearing)*math.sin(d/R)*math.cos(lat1),
+        math.cos(d/R)-math.sin(lat1)*math.sin(lat_bottom)
+        )
 
     lat_top = math.asin(math.sin(lat1)*math.cos(d/R)
          + math.cos(lat1)*math.sin(d/R)*math.cos(top_right_bearing))
 
-    long_top = long1
-    + math.atan2(math.sin(top_right_bearing)*math.sin(d/R)*math.cos(lat1),
-                 math.cos(d/R)-math.sin(lat1)*math.sin(lat_top))
+    long_top = long1 + math.atan2(
+        math.sin(top_right_bearing)*math.sin(d/R)*math.cos(lat1),
+        math.cos(d/R)-math.sin(lat1)*math.sin(lat_top)
+        )
 
     state.bottom_left_lat = math.degrees(lat_bottom)
     state.bottom_left_long = math.degrees(long_bottom)
@@ -87,6 +92,7 @@ def handle_help(message, res=False):
 @bot.message_handler(commands=['stop'])
 def handle_stop(message, res=False):
     markup = types.ReplyKeyboardRemove(selective=False)
+    state.tracker.stop_tracking()
     bot.send_message(
         message.chat.id,
         'Отслеживание остановлено',
@@ -185,6 +191,29 @@ def handle_interval(message):
         f'место: от ({state.bottom_left_lat},{state.bottom_left_long}) до ' +
         f'({state.top_right_lat},{state.top_right_long}), ' +
         f'интервал опроса: {state.interval} секунд',
+        reply_markup=markup
+    )
+    tracker = TinkoffAtm(
+        state.currency,
+        state.interval,
+        state.bottom_left_lat,
+        state.bottom_left_long,
+        state.top_right_lat,
+        state.top_right_long,
+        bot,
+        message,
+        True,
+        False
+    )
+    state.tracker = tracker
+    tracker.start_tracking()
+
+
+def post_message(message):
+    markup = types.ReplyKeyboardRemove(selective=False)
+    bot.send_message(
+        message.chat.id,
+        'Укажите частоту опроса в секундах',
         reply_markup=markup
     )
 
