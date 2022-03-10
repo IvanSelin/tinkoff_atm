@@ -12,6 +12,7 @@ import math
 
 bot = telebot.TeleBot(os.environ['TELEGRAM_API_KEY'])
 
+
 @dataclass
 class State:
     currency: str
@@ -23,6 +24,7 @@ class State:
     top_right_long: float
     bottom_left_lat: float
     bottom_left_long: float
+
 
 state = State(
     currency=None,
@@ -36,33 +38,37 @@ state = State(
     bottom_left_long=None
     )
 
+
 def calculate_bounds():
     # https://stackoverflow.com/questions/7222382/get-lat-long-given-current-point-distance-and-bearing
-    R = 6378.1 #Radius of the Earth
-    #brng = 1.57 #Bearing is 90 degrees converted to radians.
-    bottom_left_bearing = math.radians(225) # 225 degrees is bottom left
-    top_right_bearing = math.radians(45) # and 45 degrees is top right
-    d = state.radius #Distance in km
-    
-    lat1 = math.radians(state.lat) #Current lat point converted to radians
-    long1 = math.radians(state.long) #Current long point converted to radians
-    
-    lat_bottom = math.asin( math.sin(lat1)*math.cos(d/R) +
-         math.cos(lat1)*math.sin(d/R)*math.cos(bottom_left_bearing))
-    
-    long_bottom = long1 + math.atan2(math.sin(bottom_left_bearing)*math.sin(d/R)*math.cos(lat1),
+    R = 6378.1  # Radius of the Earth
+    # brng = 1.57 #Bearing is 90 degrees converted to radians.
+    bottom_left_bearing = math.radians(225)  # 225 degrees is bottom left
+    top_right_bearing = math.radians(45)  # and 45 degrees is top right
+    d = state.radius  # Distance in km
+
+    lat1 = math.radians(state.lat)  # Current lat point converted to radians
+    long1 = math.radians(state.long)  # Current long point converted to radians
+
+    lat_bottom = math.asin(math.sin(lat1)*math.cos(d/R)
+        + math.cos(lat1)*math.sin(d/R)*math.cos(bottom_left_bearing))
+
+    long_bottom = long1
+    + math.atan2(math.sin(bottom_left_bearing)*math.sin(d/R)*math.cos(lat1),
                  math.cos(d/R)-math.sin(lat1)*math.sin(lat_bottom))
-    
-    lat_top = math.asin( math.sin(lat1)*math.cos(d/R) +
-         math.cos(lat1)*math.sin(d/R)*math.cos(top_right_bearing))
-    
-    long_top = long1 + math.atan2(math.sin(top_right_bearing)*math.sin(d/R)*math.cos(lat1),
+
+    lat_top = math.asin(math.sin(lat1)*math.cos(d/R)
+         + math.cos(lat1)*math.sin(d/R)*math.cos(top_right_bearing))
+
+    long_top = long1
+    + math.atan2(math.sin(top_right_bearing)*math.sin(d/R)*math.cos(lat1),
                  math.cos(d/R)-math.sin(lat1)*math.sin(lat_top))
-    
+
     state.bottom_left_lat = math.degrees(lat_bottom)
     state.bottom_left_long = math.degrees(long_bottom)
     state.top_right_lat = math.degrees(lat_top)
     state.top_right_long = math.degrees(long_top)
+
 
 @bot.message_handler(commands=['help'])
 def handle_help(message, res=False):
@@ -76,7 +82,8 @@ def handle_help(message, res=False):
         'Чтобы увидеть это сообщение ещё раз отправьте /help',
         reply_markup=markup
     )
-    
+
+
 @bot.message_handler(commands=['stop'])
 def handle_stop(message, res=False):
     markup = types.ReplyKeyboardRemove(selective=False)
@@ -86,12 +93,13 @@ def handle_stop(message, res=False):
         reply_markup=markup
     )
 
+
 @bot.message_handler(commands=['start'])
 def handle_start(message, res=False):
-    markup=types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item_rur=types.KeyboardButton('RUB')
-    item_usd=types.KeyboardButton('USD')
-    item_eur=types.KeyboardButton('EUR')
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    item_rur = types.KeyboardButton('RUB')
+    item_usd = types.KeyboardButton('USD')
+    item_eur = types.KeyboardButton('EUR')
     markup.add(item_rur)
     markup.add(item_usd)
     markup.add(item_eur)
@@ -100,8 +108,8 @@ def handle_start(message, res=False):
         'Выберите валюту',
         reply_markup=markup
     )
-    
-    
+
+
 @bot.message_handler(
     content_types=['text'],
     func=lambda message: message.text in ['RUB', 'USD', 'EUR']
@@ -109,14 +117,18 @@ def handle_start(message, res=False):
 def handle_currency(message):
     state.currency = message.text
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_geo = types.KeyboardButton(text="Отправить местоположение", request_location=True)
+    button_geo = types.KeyboardButton(
+        text="Отправить местоположение",
+        request_location=True
+        )
     keyboard.add(button_geo)
     bot.send_message(
         message.chat.id,
         'Пришлите своё местоположение',
         reply_markup=keyboard
         )
-    
+
+
 @bot.message_handler(content_types=['location'])
 def handle_location(message):
     if message.location is not None:
@@ -132,7 +144,10 @@ def handle_location(message):
         )
     else:
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        button_geo = types.KeyboardButton(text="Отправить местоположение", request_location=True)
+        button_geo = types.KeyboardButton(
+            text="Отправить местоположение",
+            request_location=True
+            )
         keyboard.add(button_geo)
         bot.send_message(
             message.chat.id,
@@ -140,9 +155,10 @@ def handle_location(message):
             reply_markup=keyboard
             )
 
+
 @bot.message_handler(
     content_types=['text'],
-    func=lambda m: (m.text.isnumeric()) and (state.radius is None) 
+    func=lambda m: (m.text.isnumeric()) and (state.radius is None)
     )
 def handle_radius(message):
     state.radius = int(message.text)
@@ -153,10 +169,12 @@ def handle_radius(message):
         'Укажите частоту опроса в секундах',
         reply_markup=markup
     )
-    
+
+
 @bot.message_handler(
     content_types=['text'],
-    func=lambda m: (m.text.isnumeric) and (state.interval is None) and (state.radius is not None)
+    func=lambda m: (m.text.isnumeric) and (state.interval is None)
+    and (state.radius is not None)
     )
 def handle_interval(message):
     state.interval = int(message.text)
@@ -169,6 +187,6 @@ def handle_interval(message):
         f'интервал опроса: {state.interval} секунд',
         reply_markup=markup
     )
-        
-    
+
+
 bot.polling(none_stop=True, interval=0)
