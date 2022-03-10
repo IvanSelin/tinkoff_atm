@@ -64,8 +64,30 @@ def calculate_bounds():
     state.top_right_lat = math.degrees(lat_top)
     state.top_right_long = math.degrees(long_top)
 
+@bot.message_handler(commands=['help'])
+def handle_help(message, res=False):
+    markup = types.ReplyKeyboardRemove(selective=False)
+    bot.send_message(
+        message.chat.id,
+        'Вас приветствует бот, отслеживающий появление выбранной валюты ' +
+        'в банкоматах Тинькофф банка вокруг вас\r\n' +
+        'Для начала работы отправьте /start \r\n' +
+        'Для окончания работы отправьте /stop \r\n' +
+        'Чтобы увидеть это сообщение ещё раз отправьте /help',
+        reply_markup=markup
+    )
+    
+@bot.message_handler(commands=['stop'])
+def handle_stop(message, res=False):
+    markup = types.ReplyKeyboardRemove(selective=False)
+    bot.send_message(
+        message.chat.id,
+        'Отслеживание остановлено',
+        reply_markup=markup
+    )
+
 @bot.message_handler(commands=['start'])
-def start(m, res=False):
+def handle_start(message, res=False):
     markup=types.ReplyKeyboardMarkup(resize_keyboard=True)
     item_rur=types.KeyboardButton('RUB')
     item_usd=types.KeyboardButton('USD')
@@ -74,7 +96,7 @@ def start(m, res=False):
     markup.add(item_usd)
     markup.add(item_eur)
     bot.send_message(
-        m.chat.id,
+        message.chat.id,
         'Выберите валюту',
         reply_markup=markup
     )
