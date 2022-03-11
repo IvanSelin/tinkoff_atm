@@ -1,1 +1,1 @@
-worker: python tinkoff_bot.py
+web: python tinkoff_bot.py
