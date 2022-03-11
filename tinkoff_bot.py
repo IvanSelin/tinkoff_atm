@@ -94,6 +94,18 @@ def handle_stop(message, res=False):
     markup = types.ReplyKeyboardRemove(selective=False)
     if state.tracker is not None:
         state.tracker.stop_tracking()
+        state = State(
+            currency=None,
+            lat=None,
+            long=None,
+            radius=None,
+            interval=None,
+            top_right_lat=None,
+            top_right_long=None,
+            bottom_left_lat=None,
+            bottom_left_long=None,
+            tracker=None
+            )
         bot.send_message(
             message.chat.id,
             'Отслеживание остановлено',
