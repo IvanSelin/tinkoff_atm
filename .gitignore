@@ -153,4 +153,4 @@ cython_debug/
 
 
 # Custom
-*.txt
+*atm*.txt
