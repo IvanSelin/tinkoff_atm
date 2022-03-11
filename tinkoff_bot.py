@@ -92,12 +92,19 @@ def handle_help(message, res=False):
 @bot.message_handler(commands=['stop'])
 def handle_stop(message, res=False):
     markup = types.ReplyKeyboardRemove(selective=False)
-    state.tracker.stop_tracking()
-    bot.send_message(
-        message.chat.id,
-        'Отслеживание остановлено',
-        reply_markup=markup
-    )
+    if state.tracker is not None:
+        state.tracker.stop_tracking()
+        bot.send_message(
+            message.chat.id,
+            'Отслеживание остановлено',
+            reply_markup=markup
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            'Отслеживание и не было запущено',
+            reply_markup=markup
+        )
 
 
 @bot.message_handler(commands=['start'])
