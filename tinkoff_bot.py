@@ -94,6 +94,7 @@ def handle_stop(message, res=False):
     markup = types.ReplyKeyboardRemove(selective=False)
     if state.tracker is not None:
         state.tracker.stop_tracking()
+        global state
         state = State(
             currency=None,
             lat=None,
