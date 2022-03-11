@@ -179,8 +179,7 @@ def handle_radius(message):
 
 @bot.message_handler(
     content_types=['text'],
-    func=lambda m: (m.text.isnumeric) and (state.interval is None)
-    and (state.radius is not None)
+    func=lambda m: (m.text.isnumeric) and (state.interval is None) and (state.radius is not None)
     )
 def handle_interval(message):
     state.interval = int(message.text)
