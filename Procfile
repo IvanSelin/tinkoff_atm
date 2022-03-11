@@ -1,0 +1,1 @@
+worker: python tinkoff_bot.py
